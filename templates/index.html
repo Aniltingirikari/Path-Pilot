@@ -7,38 +7,59 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Firebase SDK -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-        
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyACmQf1Ueo_pKY1LpoIQyrXoiYVOcltnDQ",
-            authDomain: "path-pilot-e292f.firebaseapp.com",
-            databaseURL: "https://path-pilot-e292f-default-rtdb.firebaseio.com",
-            projectId: "path-pilot-e292f",
-            storageBucket: "path-pilot-e292f.firebasestorage.app",
-            messagingSenderId: "609259730807",
-            appId: "1:609259730807:web:a8af3c8e8a406a31c05372",
-            measurementId: "G-HNXCMGQJG7"
-        };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const auth = getAuth(app);
+    <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    
+    let firebaseConfig = null;
+    let auth = null;
+    
+    // Fetch Firebase config from backend (secure - no hardcoded keys)
+    async function loadFirebaseConfig() {
+        try {
+            const response = await fetch('/api/firebase-config');
+            firebaseConfig = await response.json();
+            
+            if (!firebaseConfig.apiKey) {
+                console.error('Firebase config not loaded');
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error loading Firebase config:', error);
+            return false;
+        }
+    }
+    
+    // Initialize Firebase with secure config
+    async function initFirebase() {
+        const configLoaded = await loadFirebaseConfig();
         
-        // Make auth functions available globally (outside the module)
-        window.auth = auth;
-        window.firebaseSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
-        window.firebaseSignUp = (email, password) => createUserWithEmailAndPassword(auth, email, password);
-        window.firebaseSignOut = () => signOut(auth);
-        window.firebaseOnAuthStateChanged = (callback) => onAuthStateChanged(auth, callback);
-        
-        console.log("✅ Firebase initialized successfully with Auth");
-    </script>
+        if (configLoaded && firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            const analytics = getAnalytics(app);
+            auth = getAuth(app);
+            
+            // Make auth functions available globally
+            window.auth = auth;
+            window.firebaseSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
+            window.firebaseSignUp = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+            window.firebaseSignOut = () => signOut(auth);
+            window.firebaseOnAuthStateChanged = (callback) => onAuthStateChanged(auth, callback);
+            
+            console.log("✅ Firebase initialized with secure config");
+            return true;
+        }
+        return false;
+    }
+    
+    // Initialize when page loads
+    await initFirebase();
+</script>
+
     <style>
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }

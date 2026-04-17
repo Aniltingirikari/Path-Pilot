@@ -4,9 +4,13 @@ from datetime import datetime, timedelta
 from functools import wraps
 import json
 import os
+from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth as firebase_auth, firestore
 import uuid
+
+# Load environment variables
+load_dotenv() 
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -575,9 +579,27 @@ planner = TravelPlanner()
 # FLASK ROUTES
 # ========================================
 
+# ========================================
+# FLASK ROUTES
+# ========================================
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/firebase-config')
+def get_firebase_config():
+    """Return Firebase config from environment variables"""
+    return jsonify({
+        'apiKey': os.getenv('FIREBASE_API_KEY', ''),
+        'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN', ''),
+        'databaseURL': os.getenv('FIREBASE_DATABASE_URL', ''),
+        'projectId': os.getenv('FIREBASE_PROJECT_ID', ''),
+        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET', ''),
+        'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID', ''),
+        'appId': os.getenv('FIREBASE_APP_ID', ''),
+        'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID', '')
+    })
 
 @app.route('/api/verify_token', methods=['POST'])
 def verify_token():
@@ -604,6 +626,7 @@ def verify_token():
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
+    # ... rest of your routes
     if not firebase_initialized:
         return jsonify({'success': True, 'message': 'Demo mode'}), 200
     

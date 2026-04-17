@@ -1,4 +1,9 @@
-# Firebase credentials (NEVER upload this!)
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Firebase credentials
 firebase-config.json
 *.json
 !requirements.txt
@@ -16,10 +21,6 @@ ENV/
 *.egg-info/
 dist/
 build/
-
-# Environment variables
-.env
-.env.local
 
 # IDE files
 .vscode/
