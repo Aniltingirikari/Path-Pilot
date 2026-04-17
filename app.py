@@ -13,23 +13,27 @@ app.secret_key = os.urandom(24)
 CORS(app, supports_credentials=True)
 
 # ========================================
-# FIREBASE INITIALIZATION
+# FIREBASE INITIALIZATION (ADMIN SDK)
 # ========================================
 
 firebase_initialized = False
 db = None
 
-try:
-    if os.path.exists('firebase-config.json'):
+# Check if firebase-config.json exists (local development)
+if os.path.exists('firebase-config.json'):
+    try:
         cred = credentials.Certificate('firebase-config.json')
         firebase_admin.initialize_app(cred)
         db = firestore.client()
         firebase_initialized = True
-        print("✅ Firebase Admin SDK initialized!")
-    else:
-        print("⚠️ Running without Firebase")
-except Exception as e:
-    print(f"⚠️ Firebase error: {e}")
+        print("✅ Firebase initialized with local config")
+    except Exception as e:
+        print(f"⚠️ Firebase error: {e}")
+        firebase_initialized = False
+else:
+    # Use environment variables (for production)
+    print("⚠️ firebase-config.json not found. Running in demo mode")
+    firebase_initialized = False
 
 # ========================================
 # AUTHENTICATION DECORATOR

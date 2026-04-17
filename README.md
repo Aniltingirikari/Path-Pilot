@@ -1,18 +1,18 @@
-# ✈️ Path Pilot - AI Travel Planning Assistant
+#  Path Pilot - AI Travel Planning Assistant
 
-## 🌟 Overview
+##  Overview
 
 **Path Pilot** is an intelligent travel planning web application that helps users plan domestic and international trips with detailed itineraries, budget tracking, transport options, hotel recommendations, and seasonal insights. The app uses Firebase for authentication and cloud storage, allowing users to save and access their trips from anywhere.
 
-## ✨ Features
+## Features
 
-### 🔐 User Authentication
+###  User Authentication
 - Email/Password signup and login
 - Secure Firebase authentication
 - User session management
 - Cloud storage for saved trips
 
-### 🇮🇳 Domestic Trip Planning
+### Domestic Trip Planning
 - Plan trips within India
 - Multiple transport options (Train, Bus, Flight, Car)
 - Realistic pricing in Indian Rupees (₹)
@@ -20,7 +20,7 @@
 - Hotel suggestions for all budgets
 - Local food and attraction tips
 
-### 🌍 International Trip Planning
+###  International Trip Planning
 - Plan international adventures
 - Flight cost estimation
 - Visa and insurance cost breakdown
@@ -28,7 +28,7 @@
 - Best time to visit recommendations
 - Cultural etiquette guides
 
-### 📊 Smart Features
+###  Smart Features
 - Budget tracking and alerts
 - Transport mode comparison
 - Day-by-day itineraries
@@ -36,32 +36,22 @@
 - Packing recommendations
 - Festival calendars
 
-### 💾 Cloud Storage
+###  Cloud Storage
 - Save trips to Firebase Cloud
 - Access saved trips from anywhere
 - View trip history
 - Secure data storage
 
 ---
-
-## How to Run Locally
+## Setup Instructions
 
 1. Clone the repository
+2. Create a Firebase project
+3. Download `firebase-config.json` from Firebase Console
+4. Place it in the project root folder
+5. Run `python app.py`
 
-git clone https://github.com/YOUR_USERNAME/path-pilot.git
-cd path-pilot
-
-Install dependencies
-
-pip install -r requirements.txt
-Add your firebase-config.json file (get from Firebase Console)
-
-Run the app
-
-python app.py
-Open browser and go to http://127.0.0.1:5000
-
-🛠️ Technology Stack
+# Technology Stack
 
 Flask - Backend web framework
 Firebase Auth - User authentication
@@ -70,6 +60,6 @@ Tailwind CSS -	Frontend styling
 Python - Backend logic
 HTML/CSS/JS  -	Frontend interface
 
-Author
+# Author
 [Tingirikari Anil]
 
