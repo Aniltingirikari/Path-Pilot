@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Path Pilot - AI Travel Planner</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyACmQf1Ueo_pKY1LpoIQyrXoiYVOcltnDQ",
+            authDomain: "path-pilot-e292f.firebaseapp.com",
+            databaseURL: "https://path-pilot-e292f-default-rtdb.firebaseio.com",
+            projectId: "path-pilot-e292f",
+            storageBucket: "path-pilot-e292f.firebasestorage.app",
+            messagingSenderId: "609259730807",
+            appId: "1:609259730807:web:a8af3c8e8a406a31c05372",
+            measurementId: "G-HNXCMGQJG7"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        
+        // Make auth functions available globally (outside the module)
+        window.auth = auth;
+        window.firebaseSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
+        window.firebaseSignUp = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+        window.firebaseSignOut = () => signOut(auth);
+        window.firebaseOnAuthStateChanged = (callback) => onAuthStateChanged(auth, callback);
+        
+        console.log("✅ Firebase initialized successfully with Auth");
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        pre {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .feature-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .transport-card {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .transport-card:hover {
+            background: #f3e8ff;
+            transform: scale(1.02);
+        }
+        .transport-card.selected {
+            background: #e9d5ff;
+            border: 2px solid #9333ea;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-600 to-blue-500 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        
+        <!-- ======================================== -->
+        <!-- LOGIN/SIGNUP SECTION (Shown First) -->
+        <!-- ======================================== -->
+        <div id="auth-container" class="fade-in">
+            <!-- Header -->
+            <div class="text-center text-white mb-8">
+                <h1 class="text-5xl font-bold mb-2">✈️ Path Pilot</h1>
+                <p class="text-xl opacity-95">Your AI-Powered Travel Planning Assistant</p>
+                <p class="mt-2 text-purple-200">Sign in to start planning your trips</p>
+            </div>
+
+            <!-- Login/Signup Card -->
+            <div class="max-w-md mx-auto">
+                <!-- Login Form -->
+                <div id="login-form" class="bg-white rounded-2xl shadow-2xl p-8 fade-in">
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-3xl text-white">✈️</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800">Welcome Back!</h2>
+                        <p class="text-gray-600 mt-1">Sign in to continue your journey</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Email Address</label>
+                        <input type="email" id="login-email" placeholder="you@example.com" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-semibold mb-2">Password</label>
+                        <input type="password" id="login-password" placeholder="••••••••" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <button onclick="handleLogin()" 
+                            class="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg hover:opacity-90 transition transform hover:scale-[1.02]">
+                        Sign In →
+                    </button>
+                    
+                    <p class="text-center text-gray-600 mt-6">
+                        Don't have an account? 
+                        <button onclick="showSignup()" class="text-purple-600 font-semibold hover:underline">Create Account</button>
+                    </p>
+                </div>
+
+                <!-- Signup Form -->
+                <div id="signup-form" class="bg-white rounded-2xl shadow-2xl p-8 fade-in hidden">
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-3xl text-white">🌟</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800">Create Account</h2>
+                        <p class="text-gray-600 mt-1">Join Path Pilot for free</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Full Name</label>
+                        <input type="text" id="signup-name" placeholder="John Doe" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Email Address</label>
+                        <input type="email" id="signup-email" placeholder="you@example.com" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-semibold mb-2">Password</label>
+                        <input type="password" id="signup-password" placeholder="••••••••" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <p class="text-xs text-gray-500 mt-1">Password must be at least 6 characters</p>
+                    </div>
+                    
+                    <button onclick="handleSignup()" 
+                            class="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg hover:opacity-90 transition transform hover:scale-[1.02]">
+                        Create Account →
+                    </button>
+                    
+                    <p class="text-center text-gray-600 mt-6">
+                        Already have an account? 
+                        <button onclick="showLogin()" class="text-purple-600 font-semibold hover:underline">Sign In</button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Features Preview -->
+            <div class="mt-12 text-center text-white">
+                <p class="text-sm opacity-75">✨ Features you'll unlock ✨</p>
+                <div class="flex flex-wrap justify-center gap-4 mt-3">
+                    <span class="px-3 py-1 bg-white/20 rounded-full text-sm">🇮🇳 Domestic Trips</span>
+                    <span class="px-3 py-1 bg-white/20 rounded-full text-sm">🌍 International Trips</span>
+                    <span class="px-3 py-1 bg-white/20 rounded-full text-sm">🚗 Multiple Transport</span>
+                    <span class="px-3 py-1 bg-white/20 rounded-full text-sm">🏨 Hotel Recommendations</span>
+                    <span class="px-3 py-1 bg-white/20 rounded-full text-sm">🌤️ Seasonal Tips</span>
+                    <span class="px-3 py-1 bg-white/20 rounded-full text-sm">💾 Save to Cloud</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================================== -->
+        <!-- MAIN APP SECTION (Shown After Login) -->
+        <!-- ======================================== -->
+        <div id="app-container" class="hidden fade-in">
+            
+            <!-- User Bar -->
+            <div class="bg-white rounded-xl shadow-lg p-4 mb-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                        <span id="user-initial">U</span>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800 text-lg" id="user-name">User</p>
+                        <p class="text-sm text-gray-600" id="user-email">email@example.com</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" 
+                        class="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 transition font-semibold">
+                    Logout
+                </button>
+            </div>
+
+            <!-- Main Card -->
+            <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+                <!-- Features Header -->
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Welcome to Path Pilot! 🎉</h2>
+                    <p class="text-gray-600">Plan and save your dream trips with AI-powered insights</p>
+                </div>
+
+                <!-- Feature Tabs -->
+                <div class="flex flex-wrap gap-2 mb-6 border-b pb-2">
+                    <button class="tab-btn px-5 py-2 rounded-lg font-semibold transition" onclick="switchTab('domestic')">
+                        🇮🇳 Domestic Trip
+                    </button>
+                    <button class="tab-btn px-5 py-2 rounded-lg font-semibold transition" onclick="switchTab('international')">
+                        🌍 International Trip
+                    </button>
+                    <button class="tab-btn px-5 py-2 rounded-lg font-semibold transition" onclick="switchTab('saved')">
+                        💾 Saved Trips
+                    </button>
+                </div>
+
+                <!-- Domestic Trip Form -->
+                <div id="domestic-tab" class="tab-content fade-in">
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-4">
+                        <h3 class="font-bold text-purple-700">🇮🇳 Plan Your India Trip</h3>
+                        <p class="text-sm text-gray-600">Example: Hyderabad → Tirupati, ₹3000 for 2 days</p>
+                    </div>
+                    <form id="domesticForm" class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">From (City):</label>
+                                <input type="text" id="dom_from" value="Hyderabad" 
+                                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">To (Destination):</label>
+                                <input type="text" id="dom_to" value="Tirupati" 
+                                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Start Date:</label>
+                                <input type="date" id="dom_start" class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">End Date:</label>
+                                <input type="date" id="dom_end" class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Budget (₹ INR):</label>
+                                <input type="number" id="dom_budget" value="3000" 
+                                       class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Travelers:</label>
+                                <input type="number" id="dom_travelers" value="1" min="1" 
+                                       class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        
+                        <!-- Transport Mode Selection -->
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">🚗 Select Transport Mode:</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <div onclick="selectTransport('train')" id="transport-train" class="transport-card p-3 text-center border rounded-lg cursor-pointer hover:bg-purple-50">
+                                    <div class="text-2xl">🚆</div>
+                                    <div class="text-sm font-semibold">Train</div>
+                                    <div class="text-xs text-gray-500">Economical</div>
+                                </div>
+                                <div onclick="selectTransport('bus')" id="transport-bus" class="transport-card p-3 text-center border rounded-lg cursor-pointer hover:bg-purple-50">
+                                    <div class="text-2xl">🚌</div>
+                                    <div class="text-sm font-semibold">Bus</div>
+                                    <div class="text-xs text-gray-500">Comfortable</div>
+                                </div>
+                                <div onclick="selectTransport('flight')" id="transport-flight" class="transport-card p-3 text-center border rounded-lg cursor-pointer hover:bg-purple-50">
+                                    <div class="text-2xl">✈️</div>
+                                    <div class="text-sm font-semibold">Flight</div>
+                                    <div class="text-xs text-gray-500">Fastest</div>
+                                </div>
+                                <div onclick="selectTransport('car')" id="transport-car" class="transport-card p-3 text-center border rounded-lg cursor-pointer hover:bg-purple-50">
+                                    <div class="text-2xl">🚗</div>
+                                    <div class="text-sm font-semibold">Car</div>
+                                    <div class="text-xs text-gray-500">Flexible</div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="dom_transport" value="train">
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-gray-600 text-sm">Popular:</span>
+                            <button type="button" onclick="setDomesticDest('Tirupati')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🙏 Tirupati</button>
+                            <button type="button" onclick="setDomesticDest('Goa')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🏖️ Goa</button>
+                            <button type="button" onclick="setDomesticDest('Mumbai')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🌆 Mumbai</button>
+                            <button type="button" onclick="setDomesticDest('Delhi')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🏛️ Delhi</button>
+                        </div>
+                        <button type="submit" 
+                                class="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg hover:opacity-90 transition">
+                            ✨ Plan Domestic Trip
+                        </button>
+                    </form>
+                </div>
+
+                <!-- International Trip Form -->
+                <div id="international-tab" class="tab-content fade-in hidden">
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-4">
+                        <h3 class="font-bold text-purple-700">🌍 Plan Your International Trip</h3>
+                        <p class="text-sm text-gray-600">Example: Hyderabad → USA, budget planning</p>
+                    </div>
+                    <form id="internationalForm" class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">From (City):</label>
+                                <input type="text" id="int_from" value="Hyderabad" 
+                                       class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">To (Country):</label>
+                                <input type="text" id="int_to" value="USA" 
+                                       class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Start Date:</label>
+                                <input type="date" id="int_start" class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">End Date:</label>
+                                <input type="date" id="int_end" class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Budget (₹ INR):</label>
+                                <input type="number" id="int_budget" value="300000" 
+                                       class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Travelers:</label>
+                                <input type="number" id="int_travelers" value="1" min="1" 
+                                       class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-gray-600 text-sm">Popular:</span>
+                            <button type="button" onclick="setInternationalDest('USA')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🇺🇸 USA</button>
+                            <button type="button" onclick="setInternationalDest('UK')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🇬🇧 UK</button>
+                            <button type="button" onclick="setInternationalDest('Thailand')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🇹🇭 Thailand</button>
+                            <button type="button" onclick="setInternationalDest('Singapore')" 
+                                    class="px-3 py-1 bg-gray-200 rounded-full text-sm hover:bg-purple-500 hover:text-white transition">🇸🇬 Singapore</button>
+                        </div>
+                        <button type="submit" 
+                                class="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white py-3 rounded-lg font-semibold text-lg hover:opacity-90 transition">
+                            🌏 Plan International Trip
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Saved Trips -->
+                <div id="saved-tab" class="tab-content fade-in hidden">
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-4">
+                        <h3 class="font-bold text-purple-700">💾 Your Saved Trips</h3>
+                        <p class="text-sm text-gray-600">All your planned trips are stored securely in the cloud</p>
+                    </div>
+                    <div id="saved-trips-list" class="space-y-4 max-h-96 overflow-y-auto">
+                        <div class="text-center py-8 text-gray-500">
+                            <p>No saved trips yet</p>
+                            <p class="text-sm mt-1">Plan a trip and click "Save This Trip" to store it here</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="hidden text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    <p class="mt-2 text-gray-600">Planning your trip...</p>
+                </div>
+
+                <!-- Error -->
+                <div id="error" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg"></div>
+
+                <!-- Result -->
+                <div id="result" class="hidden mt-6">
+                    <div class="bg-gray-50 rounded-xl p-4 overflow-x-auto">
+                        <pre id="resultContent" class="text-sm"></pre>
+                    </div>
+                    <button id="save-trip-btn" onclick="saveCurrentTrip()" 
+                            class="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition font-semibold">
+                        💾 Save This Trip to Cloud
+                    </button>
+                </div>
+            </div>
+
+            <!-- Features Footer -->
+            <div class="grid md:grid-cols-4 gap-4 mt-8">
+                <div class="bg-white rounded-xl p-4 shadow-lg feature-card">
+                    <div class="text-3xl mb-2">🇮🇳</div>
+                    <h4 class="font-bold text-purple-600 mb-2">Domestic Trips</h4>
+                    <p class="text-sm text-gray-600">Plan India trips like Hyderabad → Tirupati (₹3000)</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-lg feature-card">
+                    <div class="text-3xl mb-2">🌍</div>
+                    <h4 class="font-bold text-purple-600 mb-2">International Trips</h4>
+                    <p class="text-sm text-gray-600">Plan global adventures like Hyderabad → USA</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-lg feature-card">
+                    <div class="text-3xl mb-2">🚗</div>
+                    <h4 class="font-bold text-purple-600 mb-2">Multiple Transport</h4>
+                    <p class="text-sm text-gray-600">Compare Train, Bus, Flight & Car options</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-lg feature-card">
+                    <div class="text-3xl mb-2">🏨</div>
+                    <h4 class="font-bold text-purple-600 mb-2">Hotel & Food Tips</h4>
+                    <p class="text-sm text-gray-600">Local recommendations & money-saving tips</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default dates
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dayAfter = new Date(today);
+        dayAfter.setDate(dayAfter.getDate() + 3);
+        
+        document.getElementById('dom_start').value = tomorrow.toISOString().split('T')[0];
+        document.getElementById('dom_end').value = dayAfter.toISOString().split('T')[0];
+        
+        const nextWeek = new Date(today);
+        nextWeek.setDate(nextWeek.getDate() + 11);
+        document.getElementById('int_start').value = tomorrow.toISOString().split('T')[0];
+        document.getElementById('int_end').value = nextWeek.toISOString().split('T')[0];
+        
+        let currentItinerary = null;
+        let currentTripData = null;
+        let selectedTransport = 'train';
+        
+        // Transport selection function
+        function selectTransport(mode) {
+            selectedTransport = mode;
+            document.getElementById('dom_transport').value = mode;
+            
+            // Update UI
+            ['train', 'bus', 'flight', 'car'].forEach(m => {
+                const element = document.getElementById(`transport-${m}`);
+                if (element) {
+                    if (m === mode) {
+                        element.classList.add('selected', 'bg-purple-100', 'border-purple-500');
+                        element.classList.remove('border-gray-300');
+                    } else {
+                        element.classList.remove('selected', 'bg-purple-100', 'border-purple-500');
+                        element.classList.add('border-gray-300');
+                    }
+                }
+            });
+        }
+        
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-purple-100', 'text-purple-700');
+                btn.classList.add('text-gray-600');
+            });
+            
+            const tabId = tab + '-tab';
+            document.getElementById(tabId).classList.remove('hidden');
+            event.target.classList.add('bg-purple-100', 'text-purple-700');
+            event.target.classList.remove('text-gray-600');
+            
+            if (tab === 'saved' && window.auth && window.auth.currentUser) {
+                loadSavedTrips();
+            }
+        }
+        
+        function setDomesticDest(dest) {
+            document.getElementById('dom_to').value = dest;
+        }
+        
+        function setInternationalDest(dest) {
+            document.getElementById('int_to').value = dest;
+        }
+        
+        // Form handlers
+        document.getElementById('domesticForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await planTrip('domestic');
+        });
+        
+        document.getElementById('internationalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await planTrip('international');
+        });
+        
+        async function planTrip(type) {
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            
+            loading.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            
+            let data;
+            if (type === 'domestic') {
+                data = {
+                    trip_type: 'domestic',
+                    fromPlace: document.getElementById('dom_from').value,
+                    destination: document.getElementById('dom_to').value,
+                    startDate: document.getElementById('dom_start').value,
+                    endDate: document.getElementById('dom_end').value,
+                    budget: parseFloat(document.getElementById('dom_budget').value),
+                    numTravelers: parseInt(document.getElementById('dom_travelers').value),
+                    transportMode: document.getElementById('dom_transport').value
+                };
+            } else {
+                data = {
+                    trip_type: 'international',
+                    fromPlace: document.getElementById('int_from').value,
+                    destination: document.getElementById('int_to').value,
+                    startDate: document.getElementById('int_start').value,
+                    endDate: document.getElementById('int_end').value,
+                    budget: parseFloat(document.getElementById('int_budget').value),
+                    numTravelers: parseInt(document.getElementById('int_travelers').value),
+                    transportMode: 'flight'
+                };
+            }
+            
+            currentTripData = data;
+            
+            try {
+                const response = await fetch('/plan_trip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) throw new Error(result.error);
+                
+                currentItinerary = result.itinerary;
+                document.getElementById('resultContent').textContent = result.itinerary;
+                resultDiv.classList.remove('hidden');
+                
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+            } catch (error) {
+                errorDiv.textContent = '❌ ' + error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+        
+        async function saveCurrentTrip() {
+            if (!currentItinerary || !currentTripData) {
+                alert('No trip to save. Plan a trip first!');
+                return;
+            }
+            
+            if (!window.auth || !window.auth.currentUser) {
+                alert('Please login to save trips!');
+                return;
+            }
+            
+            const tripToSave = {
+                from: currentTripData.fromPlace,
+                to: currentTripData.destination,
+                start_date: currentTripData.startDate,
+                end_date: currentTripData.endDate,
+                budget: currentTripData.budget,
+                travelers: currentTripData.numTravelers,
+                transport_mode: currentTripData.transportMode || 'train',
+                trip_type: currentTripData.trip_type,
+                itinerary: currentItinerary.substring(0, 1000) + '...'
+            };
+            
+            try {
+                const response = await fetch('/api/save_trip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tripToSave)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Trip saved successfully to cloud!');
+                    if (document.getElementById('saved-tab').classList.contains('hidden') === false) {
+                        loadSavedTrips();
+                    }
+                } else {
+                    alert('Error saving trip: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error saving trip: ' + error.message);
+            }
+        }
+        
+        async function loadSavedTrips() {
+            if (!window.auth || !window.auth.currentUser) return;
+            
+            try {
+                const response = await fetch('/api/get_trips');
+                const result = await response.json();
+                
+                const container = document.getElementById('saved-trips-list');
+                
+                if (result.success && result.trips && result.trips.length > 0) {
+                    container.innerHTML = result.trips.map(trip => `
+                        <div class="bg-gray-50 rounded-xl p-4 border-l-4 border-purple-500">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-2xl">${trip.trip_type === 'domestic' ? '🇮🇳' : '🌍'}</span>
+                                        <h3 class="font-bold text-lg">${trip.from} → ${trip.to}</h3>
+                                        <span class="text-xs bg-purple-100 px-2 py-1 rounded">${trip.transport_mode || 'train'}</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">📅 ${trip.start_date} to ${trip.end_date}</p>
+                                    <p class="text-sm">💰 Budget: ₹${Number(trip.budget).toLocaleString()} | 👥 Travelers: ${trip.travelers}</p>
+                                    <details class="mt-2">
+                                        <summary class="text-sm text-purple-600 cursor-pointer">View Itinerary</summary>
+                                        <pre class="text-xs mt-2 bg-white p-3 rounded overflow-x-auto">${trip.itinerary}</pre>
+                                    </details>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-gray-500">
+                            <p class="text-4xl mb-2">📭</p>
+                            <p>No saved trips yet</p>
+                            <p class="text-sm mt-1">Plan a trip and click "Save This Trip" to store it here</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading trips:', error);
+            }
+        }
+        
+        // Firebase Auth Functions
+        function showSignup() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('signup-form').classList.remove('hidden');
+        }
+        
+        function showLogin() {
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+        }
+        
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                alert('Please enter email and password');
+                return;
+            }
+            
+            try {
+                const userCredential = await window.firebaseSignIn(email, password);
+                const user = userCredential.user;
+                const idToken = await user.getIdToken();
+                
+                const response = await fetch('/api/verify_token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateUIAfterLogin(user);
+                } else {
+                    alert('Login failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        }
+        
+        async function handleSignup() {
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            
+            if (!name || !email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+            
+            try {
+                const userCredential = await window.firebaseSignUp(email, password);
+                const user = userCredential.user;
+                const idToken = await user.getIdToken();
+                
+                await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, uid: user.uid })
+                });
+                
+                const response = await fetch('/api/verify_token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateUIAfterLogin(user);
+                } else {
+                    alert('Signup failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Signup failed: ' + error.message);
+            }
+        }
+        
+        async function handleLogout() {
+            await window.firebaseSignOut();
+            await fetch('/api/logout', { method: 'POST' });
+            
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+        }
+        
+        function updateUIAfterLogin(user) {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            
+            const displayName = user.displayName || user.email.split('@')[0];
+            document.getElementById('user-name').textContent = displayName;
+            document.getElementById('user-email').textContent = user.email;
+            document.getElementById('user-initial').textContent = displayName[0].toUpperCase();
+            
+            loadSavedTrips();
+        }
+        
+        // Check auth state on load
+        if (window.firebaseOnAuthStateChanged) {
+            window.firebaseOnAuthStateChanged((user) => {
+                if (user) {
+                    updateUIAfterLogin(user);
+                } else {
+                    document.getElementById('auth-container').classList.remove('hidden');
+                    document.getElementById('app-container').classList.add('hidden');
+                }
+            });
+        }
+        
+        // Initialize first tab active and default transport selection
+        setTimeout(() => {
+            const firstTab = document.querySelector('.tab-btn');
+            if (firstTab) {
+                firstTab.classList.add('bg-purple-100', 'text-purple-700');
+            }
+            selectTransport('train');
+        }, 100);
+    </script>
+</body>
+</html>
