@@ -53,12 +53,12 @@
 
 # Technology Stack
 
-Flask - Backend web framework
-Firebase Auth - User authentication
-Firestore -	Cloud database
-Tailwind CSS -	Frontend styling
-Python - Backend logic
-HTML/CSS/JS  -	Frontend interface
+- Flask - Backend web framework
+- Firebase Auth - User authentication
+- Firestore -	Cloud database
+- Tailwind CSS -	Frontend styling
+- Python - Backend logic
+- HTML/CSS/JS  -	Frontend interface
 
 # Author
 [Tingirikari Anil]
